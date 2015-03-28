@@ -1,3 +1,4 @@
+
 require 'capybara/dsl'
 require 'capybara/poltergeist'
 
@@ -29,7 +30,20 @@ Capybara.current_driver = :poltergeist
 
     link.click
 
-    p find('#ctl00_ContentPlaceHolder1_LabelOrgName').text
+    organization_name = find('#ctl00_ContentPlaceHolder1_LabelOrgName').text
+
+    # Fetch all rows in the organization's info table
+    rows = page.all('table#ctl00_ContentPlaceHolder1_DetailsViewOrgInfo tr')
+
+    # Extract the text of the last column from each row that we care about.
+    category       = rows[0].all('td').last.text
+    office_address = rows[1].all('td').last.text
+    office_phone   = rows[2].all('td').last.text
+    mission        = rows[3].all('td').last.text
+    website        = rows[4].all('td').last.text
+
+    p organization_name
+    p website
 
   end
 
