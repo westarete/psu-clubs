@@ -8,3 +8,12 @@ pull out all the data about student clubs.
 - Ruby
 - PhantomJS
 
+## Run it
+
+```
+bundle install
+ruby crawl.rb
+```
+
+After it runs (it can take 30 minutes), you'll have a CSV file with all
+the PSU club data.
