@@ -1,4 +1,5 @@
-
+require 'csv'
+require 'progressbar'
 require 'capybara/dsl'
 require 'capybara/poltergeist'
 
@@ -14,37 +15,53 @@ Capybara.register_driver :poltergeist do |app|
 end
 Capybara.current_driver = :poltergeist
 
-1.upto(71) do |page_number|
+pbar = ProgressBar.new("clubs", 71*15)
 
-  # Do this for all 15 links on the page
-  15.times do |link_index|
+CSV.open("clubs.csv", "wb") do |csv|
+  # Print header to CSV
+  csv << [ "Organication Name", "Category", "Office Address", "Office Phone", "Mission", "Website" ]
 
-    visit "/hub/studentorgs/orgdirectory/"
-    select page_number.to_s, from: "Skip to Page:"
-    click_button "Go"
+  # Visit every page of results
+  1.upto(71) do |page_number|
 
-    # Go get the Nth link on the page
-    link = page.all('table#ctl00_ContentPlaceHolder1_GridViewResults tr a')[link_index]
+    # Do this for all 15 links on the results page
+    15.times do |link_index|
 
-    next if ["Org Name", "President Name", "Category"].include?(link.text)
+      # Visit the current page of search results
+      visit "/hub/studentorgs/orgdirectory/"
+      select page_number.to_s, from: "Skip to Page:"
+      click_button "Go"
 
-    link.click
+      # Go get the Nth organization link on the page
+      link = page.all('table#ctl00_ContentPlaceHolder1_GridViewResults tr a')[link_index]
 
-    organization_name = find('#ctl00_ContentPlaceHolder1_LabelOrgName').text
+      # The table headers have links too…
+      next if ["Org Name", "President Name", "Category"].include?(link.text)
 
-    # Fetch all rows in the organization's info table
-    rows = page.all('table#ctl00_ContentPlaceHolder1_DetailsViewOrgInfo tr')
+      # Actually visit the organization page
+      link.click
 
-    # Extract the text of the last column from each row that we care about.
-    category       = rows[0].all('td').last.text
-    office_address = rows[1].all('td').last.text
-    office_phone   = rows[2].all('td').last.text
-    mission        = rows[3].all('td').last.text
-    website        = rows[4].all('td').last.text
+      # Harvest the organization's data:
 
-    p organization_name
-    p website
+      organization_name = find('#ctl00_ContentPlaceHolder1_LabelOrgName').text
+
+      # Fetch all rows in the organization's info table
+      rows = page.all('table#ctl00_ContentPlaceHolder1_DetailsViewOrgInfo tr')
+
+      # Extract the text of the last column from each row that we care about.
+      category       = rows[0].all('td').last.text
+      office_address = rows[1].all('td').last.text
+      office_phone   = rows[2].all('td').last.text
+      mission        = rows[3].all('td').last.text
+      website        = rows[4].all('td').last.text
+
+      csv << [organization_name, category, office_address, office_phone, mission, website]
+
+      pbar.inc
+    end
 
   end
 
 end
+
+pbar.finish
